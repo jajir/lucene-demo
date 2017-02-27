@@ -1,1 +1,0 @@
-start javaw -jar .\lib\luke-with-deps.jar
