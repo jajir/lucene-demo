@@ -16,8 +16,8 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -52,7 +52,7 @@ public class FirstTest {
 			throw new IllegalArgumentException(index.getAbsolutePath() + " is file");
 		}
 		Arrays.stream(index.listFiles()).forEach(file -> {
-			System.out.println("deleting: " + file.getName());
+//			System.out.println("deleting: " + file.getName());
 			file.delete();
 		});
 	}
@@ -69,11 +69,14 @@ public class FirstTest {
 		PrepareData.init().forEach(article -> {
 			Document doc = new Document();
 			doc.add(new Field(FIELD_NAME, article.getName(), TextField.TYPE_STORED));
-			final StringField fUrl = new StringField(FIELD_URL, article.getUrl(), Store.YES);
-			doc.add(fUrl);
-			final Field fTags = new Field(FIELD_TAGS, article.getTags(), TextField.TYPE_STORED);
-			doc.add(fTags);
-			doc.add(new Field(FIELD_PEREX, article.getPerex(), TextField.TYPE_STORED));
+			final StringField url = new StringField(FIELD_URL, article.getUrl(), Store.YES);
+			doc.add(url);
+			final Field tags = new Field(FIELD_TAGS, article.getTags(), TextField.TYPE_STORED);
+			tags.setBoost(1.5F);
+			doc.add(tags);
+			final Field text = new Field(FIELD_PEREX, article.getPerex(), TextField.TYPE_STORED);
+			text.setBoost(0.4F);
+			doc.add(text);
 			doc.add(new Field(FIELD_TEXT, article.getText(), TextField.TYPE_STORED));
 			addDoc(iwriter, doc);
 		});
@@ -109,11 +112,12 @@ public class FirstTest {
 		Directory directory = openDirectory();
 		DirectoryReader ireader = DirectoryReader.open(directory);
 		IndexSearcher isearcher = new IndexSearcher(ireader);
-		
+
 		// Parse a simple query that searches for "text":
-		MultiFieldQueryParser parser = new MultiFieldQueryParser(new String[] {FIELD_TAGS, FIELD_TEXT}, analyzer);
-//		QueryParser parser = new QueryParser("text", analyzer);
-		Query query = parser.parse("psa");
+//		MultiFieldQueryParser parser = new MultiFieldQueryParser(new String[] { FIELD_TAGS, FIELD_TEXT }, analyzer);
+		 QueryParser parser = new QueryParser("text", analyzer);
+		
+		Query query = parser.parse("text:psa OR tags:psa");
 
 		System.out.println(isearcher.explain(query, 0).toString());
 		System.out.println(isearcher.explain(query, 3).toString());
